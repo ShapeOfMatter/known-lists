@@ -3,8 +3,6 @@ name:               known-lists
 version:            0.1.0.0
 synopsis:
     Easy type-level lists with term-level membership proofs.
-
--- description:
 license:            BSD-3-Clause
 license-file:       LICENSE
 maintainer:         shapeofmatter@pm.me
@@ -14,13 +12,16 @@ description:
     as well as subsets,
     maps,
     and traversals.
--- copyright:
 category:           Data
 build-type:         Simple
-extra-doc-files:    CHANGELOG.md
--- extra-source-files:
+extra-doc-files:    README.md
+tested-with:        
 
-common warnings
+source-repository head
+  type:     git
+  location: https://github.com/ShapeOfMatter/MultiChor
+
+common basic-config
     ghc-options: -Wall
 
 library
