@@ -1,0 +1,45 @@
+cabal-version:      3.0
+name:               known-lists
+version:            0.1.0.0
+synopsis:
+    Easy type-level lists with term-level membership proofs.
+
+-- description:
+license:            BSD-3-Clause
+license-file:       LICENSE
+maintainer:         shapeofmatter@pm.me
+description:
+    A type-level lists library for easy proof-of-membership programming.
+    Provides data structures for talking about members of a list,
+    as well as subsets,
+    maps,
+    and traversals.
+-- copyright:
+category:           Data
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+-- extra-source-files:
+
+common warnings
+    ghc-options: -Wall
+
+library
+    import:           warnings
+    exposed-modules:  MyLib
+    -- other-modules:
+    -- other-extensions:
+    build-depends:    base ^>=4.20.0.0
+    hs-source-dirs:   src
+    default-language: GHC2024
+
+test-suite known-lists-test
+    import:           warnings
+    default-language: GHC2024
+    -- other-modules:
+    -- other-extensions:
+    type:             exitcode-stdio-1.0
+    hs-source-dirs:   test
+    main-is:          Main.hs
+    build-depends:
+        base ^>=4.20.0.0,
+        known-lists

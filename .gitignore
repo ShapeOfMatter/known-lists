@@ -1,0 +1,6 @@
+dist-newstyle
+.venv
+fourmolu.yaml
+paper/
+report.html
+cabal.project.local*
