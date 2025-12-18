@@ -4,8 +4,7 @@ module Data.Membership where
 import Data.Known
 import Data.Proxy (Proxy (..))
 
-
--- * Membership and Subset proofs
+-- * Membership proofs
 
 -- | A term-level proof that a type is a member of a list of types.
 --   These are frequently used both for proofs /per se/ and to identify individuals in such a list.
@@ -19,7 +18,53 @@ import Data.Proxy (Proxy (..))
 data Member (x :: k) (xs :: [k]) where
   First :: forall xs x xs'. (xs ~ (x ': xs')) => Member x (x ': xs')
   Later :: Member x xs -> Member x (y ': xs)
+instance Proxies (Member x ys) x where
+  proxy _ = Proxy
 
+-- | Any element @p@ is a member of the list @'[p]@.
+alone :: forall p. Member p (p ': '[])
+alone = First
+
+-- | Use any membership proof to to safely call code that only works on a non-empy list.
+quorum1 ::
+  forall {k} (ps :: [k]) (p :: k) a.
+  (Known [k] ps) =>
+  Member p ps ->
+  (forall q qs. (Known k q, Known [k] qs, ps ~ q ': qs) => a) ->
+  a
+quorum1 p a = case (p, tySpine @k @ps) of
+  (First, TyCons _ _) -> a
+  (Later _, TyCons _ _) -> a
+
+-- * Easy indexing with `Member` objects.
+
+-- | A `Member` value for the first item in a list.
+--   Note that type-applicaiton is different than with `First`, to which this is otherwise redundant.
+listedFirst :: forall p1 ps. Member p1 (p1 ': ps) -- Can we replace all of these with something using off-the-shelf type-level Nats?
+listedFirst = First
+
+-- | A `Member` value for the second item in a list.
+listedSecond :: forall p2 p1 ps. Member p2 (p1 ': p2 ': ps)
+listedSecond = inSuper (consSuper refl) listedFirst
+
+-- | A `Member` value for the third item in a list.
+listedThird :: forall p3 p2 p1 ps. Member p3 (p1 ': p2 ': p3 ': ps)
+listedThird = inSuper (consSuper refl) listedSecond
+
+-- | A `Member` value for the forth item in a list.
+listedForth :: forall p4 p3 p2 p1 ps. Member p4 (p1 ': p2 ': p3 ': p4 ': ps)
+listedForth = inSuper (consSuper refl) listedThird
+
+-- | A `Member` value for the fifth item in a list.
+listedFifth :: forall p5 p4 p3 p2 p1 ps. Member p5 (p1 ': p2 ': p3 ': p4 ': p5 ': ps)
+listedFifth = inSuper (consSuper refl) listedForth
+
+-- | A `Member` value for the sixth item in a list.
+listedSixth :: forall p6 p5 p4 p3 p2 p1 ps. Member p6 (p1 ': p2 ': p3 ': p4 ': p5 ': p6 ': ps)
+listedSixth = inSuper (consSuper refl) listedFifth
+
+-- * Subset proofs
+--
 -- | A term level proof that one type-level list represents a subset of another,
 --   embodied by a total function from proof-of-membership in the sublist to proof-of-membership in the superlist.
 --   (If you make one with a partial funciton, all bets are off.)
@@ -28,10 +73,16 @@ newtype Subset xs ys = Subset
     -- Frequently used to show that a location is part of a larger set of locations.
     inSuper :: forall x. Member x xs -> Member x ys
   }
+instance Proxies (Subset xs ys) xs where
+  proxy _ = Proxy
 
 -- | The subset relation is reflexive.
 refl :: Subset xs xs
 refl = Subset id
+
+-- | Alias `refl`. When used as an identifier, this is more descriptive.
+allOf :: forall ps. Subset ps ps
+allOf = refl
 
 -- | The sublist relation is transitive.
 transitive :: Subset xs ys -> Subset ys zs -> Subset xs zs
@@ -64,22 +115,6 @@ mxy @@ sxy = Subset \case
   Later mxxs -> inSuper sxy mxxs
 
 
-instance Proxies (Member x ys) x where
-  proxy _ = Proxy
-instance Proxies (Subset xs ys) xs where
-  proxy _ = Proxy
-
--- | Use any membership proof to to safely call code that only works on a non-empy list.
-quorum1 ::
-  forall {k} (ps :: [k]) (p :: k) a.
-  (Known [k] ps) =>
-  Member p ps ->
-  (forall q qs. (Known k q, Known [k] qs, ps ~ q ': qs) => a) ->
-  a
-quorum1 p a = case (p, tySpine @k @ps) of
-  (First, TyCons _ _) -> a
-  (Later _, TyCons _ _) -> a
-
 -- * Explicit Membership
 
 -- | Quickly build membership proofs, when the membership can be directly observed by GHC.
@@ -102,37 +137,3 @@ instance {-# OVERLAPPABLE #-} (ExplicitSubset xs ys, ExplicitMember x ys) => Exp
 instance {-# OVERLAPS #-} ExplicitSubset '[] ys where
   explicitSubset = nobody
 
--- | Alias `refl`. When used as an identifier, this is more descriptive.
-allOf :: forall ps. Subset ps ps
-allOf = refl
-
--- | Any element @p@ is a member of the list @'[p]@.
-singleton :: forall p. Member p (p ': '[])
-singleton = First
-
--- * Easy indexing with `Member` objects.
-
--- | A `Member` value for the first item in a list.
---   Note that type-applicaiton is different than with `First`, to which this is otherwise redundant.
-listedFirst :: forall p1 ps. Member p1 (p1 ': ps) -- Can we replace all of these with something using off-the-shelf type-level Nats?
-listedFirst = First
-
--- | A `Member` value for the second item in a list.
-listedSecond :: forall p2 p1 ps. Member p2 (p1 ': p2 ': ps)
-listedSecond = inSuper (consSuper refl) listedFirst
-
--- | A `Member` value for the third item in a list.
-listedThird :: forall p3 p2 p1 ps. Member p3 (p1 ': p2 ': p3 ': ps)
-listedThird = inSuper (consSuper refl) listedSecond
-
--- | A `Member` value for the forth item in a list.
-listedForth :: forall p4 p3 p2 p1 ps. Member p4 (p1 ': p2 ': p3 ': p4 ': ps)
-listedForth = inSuper (consSuper refl) listedThird
-
--- | A `Member` value for the fifth item in a list.
-listedFifth :: forall p5 p4 p3 p2 p1 ps. Member p5 (p1 ': p2 ': p3 ': p4 ': p5 ': ps)
-listedFifth = inSuper (consSuper refl) listedForth
-
--- | A `Member` value for the sixth item in a list.
-listedSixth :: forall p6 p5 p4 p3 p2 p1 ps. Member p6 (p1 ': p2 ': p3 ': p4 ': p5 ': p6 ': ps)
-listedSixth = inSuper (consSuper refl) listedFifth
