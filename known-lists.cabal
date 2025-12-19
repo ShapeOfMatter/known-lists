@@ -41,12 +41,14 @@ common basic-config
                        ,LiberalTypeSynonyms
                        ,OverloadedLists
                        ,TypeFamilies
-		       ,UndecidableSuperClasses
+                       ,UndecidableInstances
+                       ,UndecidableSuperClasses
 
 library
     import:           basic-config
     exposed-modules:  Data.Known
                      ,Data.Membership
+                     ,Data.TIndexed
     hs-source-dirs:   src
 
 test-suite known-lists-test
