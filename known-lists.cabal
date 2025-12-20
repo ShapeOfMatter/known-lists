@@ -25,6 +25,7 @@ common basic-config
     default-language: GHC2024
     build-depends:
         , base                 ^>=4.20.0.0
+        , bifunctors           >=5.0 && <6
     ghc-options:
       -Wall
       -Wno-incomplete-uni-patterns
@@ -40,6 +41,7 @@ common basic-config
                        ,LambdaCase
                        ,LiberalTypeSynonyms
                        ,OverloadedLists
+                       ,QuantifiedConstraints
                        ,TypeFamilies
                        ,UndecidableInstances
                        ,UndecidableSuperClasses

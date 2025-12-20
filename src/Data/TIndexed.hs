@@ -1,8 +1,10 @@
 -- | Types, functions, and structures for writing choreographies with variable numbers of participants.
 module Data.TIndexed where
 
+import Data.Bifunctor.Flip
+import Data.Kind (Type)
 import Data.Foldable (toList)
-import Data.Functor.Compose (Compose (getCompose))
+import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Const (Const (Const, getConst))
 import Data.Membership
 import Data.Proxy (Proxy (..))
@@ -20,7 +22,16 @@ import qualified GHC.Exts as EXTS
 newtype PIndexed ls f = PIndexed {pindex :: PIndex ls f}
 
 -- | An impredicative quantified type. Wrapping it up in t`PIndexed` wherever possible will avoid a lot of type errors and headache.
-type PIndex (ls :: [k]) f = forall (l :: k). (Known k l) => Member l ls -> f l
+type PIndex (ls :: [k]) (f :: k -> Type) = forall (l :: k). (Known k l) => Member l ls -> f l
+
+instance (Known [k] ls, forall l. Functor (m l)) => Functor (Compose (PIndexed ls) (Flip m)) where
+  fmap f (Compose (PIndexed i)) = Compose . PIndexed $ \l -> Flip ((f <$>) . runFlip $ i l)
+
+instance (Known [k] ls, forall l. Applicative (m l)) => Applicative (Compose (PIndexed ls) (Flip m)) where
+  pure a = Compose . PIndexed $ \_ -> Flip (pure a)
+  liftA2 f (Compose (PIndexed a)) (Compose (PIndexed b)) = Compose . PIndexed $ \l -> Flip ((liftA2 f) (runFlip $ a l) (runFlip $ b l))
+
+instance (Known [k] ls, forall l. Monad (m l)) => Monad (Compose (PIndexed ls) (Flip m)) where
 
 -- | Sequence computations indexed by parties.
 --   Converts a t`PIndexed` of computations into a computation yielding a t`PIndexed`.
@@ -33,7 +44,7 @@ sequenceP ::
   PIndexed ls (Compose m b) ->
   m (PIndexed ls b)
 sequenceP (PIndexed f) = case tySpine @k @ls of
-  TyCons _ (_ :: Proxy ts) -> do
+  TyCons _ (_ :: Proxy (ts :: [k])) -> do
     b <- getCompose $ f First
     PIndexed fTail <- sequenceP (PIndexed @ts @(Compose m b) $ f . Later)
     let retVal :: PIndex (ls :: [k]) b
