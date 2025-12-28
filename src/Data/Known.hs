@@ -33,6 +33,15 @@ instance (Knowable k) => KnownList ('[] :: [k]) where
 instance (Known k l, Known [k] ls) => KnownList (l ': ls) where
   tySpine = TyCons Proxy Proxy
 
+knownLength :: forall {v} (vs :: [v]) p. (KnownList vs, Proxies p vs) => p -> Int
+knownLength _ = case tySpine @v @vs of
+  TyNil -> 0
+  TyCons _ ts -> 1 + knownLength ts
+
+typeReps :: forall {v} (vs :: [v]) p. (KnownList vs, Proxies p vs) => p -> [Tpbl.TypeRep]
+typeReps _ = case tySpine @v @vs of
+  TyNil -> []
+  TyCons h ts -> Tpbl.typeRep h : typeReps ts
 
 class Knowable k where
   type ValType k :: Type

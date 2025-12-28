@@ -3,6 +3,7 @@ module Data.Membership where
 
 import Data.Known
 import Data.Proxy (Proxy (..))
+import qualified Data.Typeable as Tpbl
 
 -- * Membership proofs
 
@@ -20,6 +21,8 @@ data Member (x :: k) (xs :: [k]) where
   Later :: Member x xs -> Member x (y ': xs)
 instance Proxies (Member x ys) x where
   proxy _ = Proxy
+instance (Known k x, Known [k] xs) => Show (Member x xs) where
+  show m = "Member " ++ (show . Tpbl.typeRep . proxy $ m) ++ " " ++ (show . typeReps $ Proxy @xs)
 
 -- | Any element @p@ is a member of the list @'[p]@.
 alone :: forall p. Member p (p ': '[])
@@ -75,6 +78,8 @@ newtype Subset xs ys = Subset
   }
 instance Proxies (Subset xs ys) xs where
   proxy _ = Proxy
+instance (Known [k] xs, Known [k] ys) => Show (Subset xs ys) where
+  show _ = "Subset " ++ (show . typeReps $ Proxy @xs) ++ " " ++ (show . typeReps $ Proxy @ys)
 
 -- | The subset relation is reflexive.
 refl :: Subset xs xs

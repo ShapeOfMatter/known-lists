@@ -25,13 +25,47 @@ newtype PIndexed ls f = PIndexed {pindex :: PIndex ls f}
 type PIndex (ls :: [k]) (f :: k -> Type) = forall (l :: k). (Known k l) => Member l ls -> f l
 
 instance (Known [k] ls, forall l. Functor (m l)) => Functor (Compose (PIndexed ls) (Flip m)) where
-  fmap f (Compose (PIndexed i)) = Compose . PIndexed $ \l -> Flip ((f <$>) . runFlip $ i l)
+  fmap = cpmap . flipmap
+    where cpmap :: (forall l. Flip m a l -> Flip m b l) -> Compose (PIndexed ls) (Flip m) a -> Compose (PIndexed ls) (Flip m) b
+          cpmap f (Compose (PIndexed i)) = Compose . PIndexed $ f . i
+          flipmap :: (forall l. Functor (m l)) => (a -> b) -> (forall l. Flip m a l -> Flip m b l)
+          flipmap f = Flip . fmap f . runFlip
 
+instance (Known [k] ls, forall l. Foldable (m l)) => Foldable (Compose (PIndexed ls) (Flip m)) where
+  foldMap (f :: a -> monoid) (Compose (PIndexed m)) = fmGo (refl @ls)
+    where fm :: PIndex ls (Const monoid)
+          fm l = Const . foldMap f . runFlip $ m l
+          fmGo :: forall ls'. (Known [k] ls') => Subset ls' ls -> monoid
+          fmGo ls' = case tySpine @k @ls' of
+            TyNil -> mempty
+            TyCons _ _ -> getConst (fm $ inSuper ls' $ listedFirst) <> fmGo (consSet @ls' `transitive` ls')
+
+
+-- FIX: can't do a traversablee this way.
+-- The inner applicative isn't necessarily the _same_ effect for each party, so they can't meaningfully be sequenced.
+-- Gotta recapitulate the compose bs from sequenceP.
+instance (Known [k] ls, forall l. Traversable (m l)) => Traversable (Compose (PIndexed ls) (Flip m)) where
+  sequenceA (c :: Compose (PIndexed ls) (Flip m) a) = case tySpine @k @ls of
+      TyCons _ (_ :: Proxy (ts :: [k])) -> do
+        let m = pindex . getCompose $ c
+        b <- runFlip $ m First
+        PIndexed fTail <- sequenceA (PIndexed @ts @(Flip m a) $ m . Later)
+        let retVal :: PIndex (ls :: [k]) b
+            retVal First = b
+            retVal (Later ltr) = fTail ltr
+        pure $ PIndexed retVal
+      TyNil -> pure . Compose $ PIndexed \case {}
+
+{- Punt on all this until I'm sure the applicative instance is lawful...
+_cplift :: (forall l. Flip m a l -> Flip m b l -> Flip m c l ...
+_fliplift :: (forall l. Applicative (m l)) => (a -> b -> c) -> (forall l. Flip m a l -> Flip m b l -> Flip m c l)
+_fliplift f a b = Flip $ (liftA2 f) (runFlip a) (runFlip b)
 instance (Known [k] ls, forall l. Applicative (m l)) => Applicative (Compose (PIndexed ls) (Flip m)) where
-  pure a = Compose . PIndexed $ \_ -> Flip (pure a)
-  liftA2 f (Compose (PIndexed a)) (Compose (PIndexed b)) = Compose . PIndexed $ \l -> Flip ((liftA2 f) (runFlip $ a l) (runFlip $ b l))
-
+  pure a = Compose . PIndexed $ const . Flip . pure $ a
+  liftA2 f (Compose (PIndexed a)) (Compose (PIndexed b)) = Compose . PIndexed $ \l -> _fliplift f (a l) (b l)
 instance (Known [k] ls, forall l. Monad (m l)) => Monad (Compose (PIndexed ls) (Flip m)) where
+-}
+    
 
 -- | Sequence computations indexed by parties.
 --   Converts a t`PIndexed` of computations into a computation yielding a t`PIndexed`.
