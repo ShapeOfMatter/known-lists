@@ -44,17 +44,19 @@ instance (Known [k] ls, forall l. Foldable (m l)) => Foldable (Compose (PIndexed
 -- FIX: can't do a traversablee this way.
 -- The inner applicative isn't necessarily the _same_ effect for each party, so they can't meaningfully be sequenced.
 -- Gotta recapitulate the compose bs from sequenceP.
-instance (Known [k] ls, forall l. Traversable (m l)) => Traversable (Compose (PIndexed ls) (Flip m)) where
-  sequenceA (c :: Compose (PIndexed ls) (Flip m) a) = case tySpine @k @ls of
+{-instance (Known [k] ls, Monad m) => Traversable (Compose (PIndexed ls) (Compose (Flip m))) where
+  --sequenceA (c :: Compose (PIndexed ls) (Flip m) a) = case tySpine @k @ls of
+  sequenceA c = case tySpine @k @ls of
       TyCons _ (_ :: Proxy (ts :: [k])) -> do
         let m = pindex . getCompose $ c
         b <- runFlip $ m First
-        PIndexed fTail <- sequenceA (PIndexed @ts @(Flip m a) $ m . Later)
+        --PIndexed fTail <- sequenceA (PIndexed @ts @(Flip m a) $ m . Later)
+        PIndexed fTail <- sequenceA (PIndexed @ts  $ m . Later)
         let retVal :: PIndex (ls :: [k]) b
             retVal First = b
             retVal (Later ltr) = fTail ltr
         pure $ PIndexed retVal
-      TyNil -> pure . Compose $ PIndexed \case {}
+      TyNil -> pure . Compose $ PIndexed \case {}-}
 
 {- Punt on all this until I'm sure the applicative instance is lawful...
 _cplift :: (forall l. Flip m a l -> Flip m b l -> Flip m c l ...
@@ -73,18 +75,19 @@ instance (Known [k] ls, forall l. Monad (m l)) => Monad (Compose (PIndexed ls) (
 --   In most cases, the [choreographic functions](#g:choreographicfunctions) below will be easier to use
 --   than messing around with `Data.Functor.Compose.Compose`.
 sequenceP ::
-  forall {k} b (ls :: [k]) m.
-  (Known [k] ls, Monad m) =>
+  forall {k} (b :: k -> Type) (ls :: [k]) (m :: Type -> Type) .
+  (Known [k] ls, Applicative m) =>
   PIndexed ls (Compose m b) ->
   m (PIndexed ls b)
 sequenceP (PIndexed f) = case tySpine @k @ls of
-  TyCons _ (_ :: Proxy (ts :: [k])) -> do
-    b <- getCompose $ f First
-    PIndexed fTail <- sequenceP (PIndexed @ts @(Compose m b) $ f . Later)
-    let retVal :: PIndex (ls :: [k]) b
-        retVal First = b
-        retVal (Later ltr) = fTail ltr
-    pure $ PIndexed retVal
+  TyCons (_ :: Proxy h) (_ :: Proxy (ts :: [k])) ->
+    let b = getCompose $ f First
+        fTail = pindex <$> sequenceP (PIndexed $ f . Later)
+        retIndex :: b h -> PIndex ts b -> PIndex ls b
+        retIndex b' _ First = b'
+        retIndex _ ts' (Later ltr) = ts' ltr
+        rv = retIndex <$> b <*> fTail
+    in PIndexed <$> rv
   TyNil -> pure $ PIndexed \case {}
 
 -- * A type-indexed vector type
