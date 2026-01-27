@@ -19,7 +19,7 @@ import qualified Data.Typeable as Tpbl
 data Member (x :: k) (xs :: [k]) where
   First :: forall xs x xs'. (xs ~ (x ': xs')) => Member x (x ': xs')
   Later :: Member x xs -> Member x (y ': xs)
--- todo: Eq and Ord probably are meaningful and derivable...
+  -- todo: Eq and Ord probably are meaningful and derivable...
 instance Proxies (Member x ys) x where
   proxy _ = Proxy
 instance (Known k x, Known [k] xs) => Show (Member x xs) where
