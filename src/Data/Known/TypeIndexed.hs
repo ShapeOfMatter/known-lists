@@ -43,7 +43,7 @@ instance (Known [k] ts, forall t. Foldable (m t)) => Foldable (Compose (TIndexed
 
 -- FIX: can't do a traversablee this way.
 -- The inner applicative isn't necessarily the _same_ effect for each party, so they can't meaningfully be sequenced.
--- Gotta recapitulate the compose bs from sequenceP.
+-- Gotta recapitulate the compose bs from sequenceT.
 {-instance (Known [k] ls, Monad m) => Traversable (Compose (TIndexed ls) (Compose (Flip m))) where
   --sequenceA (c :: Compose (TIndexed ls) (Flip m) a) = case tySpine @k @ls of
   sequenceA c = case tySpine @k @ls of
@@ -74,15 +74,15 @@ instance (Known [k] ls, forall l. Monad (m l)) => Monad (Compose (TIndexed ls) (
 --   Strongly analogous to 'Data.Traversable.sequence'.
 --   In most cases, the [choreographic functions](#g:choreographicfunctions) below will be easier to use
 --   than messing around with `Data.Functor.Compose.Compose`.
-sequenceP ::
+sequenceT ::
   forall {k} (b :: k -> Type) (ts :: [k]) (m :: Type -> Type) .
   (Known [k] ts, Applicative m) =>
   TIndexed ts (Compose m b) ->
   m (TIndexed ts b)
-sequenceP (TIndexed f) = case tySpine @k @ts of
+sequenceT (TIndexed f) = case tySpine @k @ts of
   TyCons (_ :: Proxy head) (_ :: Proxy (tail :: [k])) ->
     let b = getCompose $ f First
-        fTail = tindex <$> sequenceP (TIndexed $ f . Later)
+        fTail = tindex <$> sequenceT (TIndexed $ f . Later)
         retIndex :: b head -> TIndex tail b -> TIndex ts b
         retIndex b' _ First = b'
         retIndex _ ts' (Later ltr) = ts' ltr
