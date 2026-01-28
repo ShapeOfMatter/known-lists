@@ -38,7 +38,7 @@ instance (Known [k] ts, forall t. Foldable (m t)) => Foldable (Compose (TIndexed
           fmGo :: forall ts'. (Known [k] ts') => Subset ts' ts -> monoid
           fmGo ts' = case tySpine @k @ts' of
             TyNil -> mempty
-            TyCons _ _ -> getConst (fm $ inSuper ts' $ listedFirst) <> fmGo (consSet @ts' `transitive` ts')
+            TyCons _ _ -> getConst (fm $ inSuper ts' listedFirst) <> fmGo (consSet @ts' `transitive` ts')
 
 
 -- FIX: can't do a traversablee this way.
