@@ -48,9 +48,9 @@ common basic-config
 
 library
     import:           basic-config
-    exposed-modules:  Data.Known
-                     ,Data.Membership
-                     ,Data.TIndexed
+    exposed-modules:  Data.Known.Knowable
+                     ,Data.Known.Membership
+                     ,Data.Known.TypeIndexed
     hs-source-dirs:   src
 
 test-suite known-lists-test

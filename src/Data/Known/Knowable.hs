@@ -1,6 +1,6 @@
 {-# LANGUAGE UndecidableInstances #-}
 -- | Generalization of the `GHC.TypeList.KnownSymbol` pattern under a unified class that also covers homogeneous type-level lists.
-module Data.Known where
+module Data.Known.Knowable where
 
 import Data.Kind (Constraint, Type)
 import Data.Proxy (Proxy (..))

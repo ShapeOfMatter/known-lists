@@ -1,7 +1,7 @@
 -- | Term level proofs of membership and subset relations among type-level lists.
-module Data.Membership where
+module Data.Known.Membership where
 
-import Data.Known
+import Data.Known.Knowable
 import Data.Proxy (Proxy (..))
 import qualified Data.Typeable as Tpbl
 

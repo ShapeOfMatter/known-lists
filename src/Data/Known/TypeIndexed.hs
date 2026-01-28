@@ -1,14 +1,14 @@
 -- | Types, functions, and structures for writing choreographies with variable numbers of participants.
-module Data.TIndexed where
+module Data.Known.TypeIndexed where
 
 import Data.Bifunctor.Flip
 import Data.Kind (Type)
 import Data.Foldable (toList)
 import Data.Functor.Compose (Compose (Compose, getCompose))
 import Data.Functor.Const (Const (Const, getConst))
-import Data.Membership
 import Data.Proxy (Proxy (..))
-import Data.Known
+import Data.Known.Knowable
+import Data.Known.Membership
 import qualified Data.Typeable as Tpbl
 import qualified GHC.Exts as EXTS
 
