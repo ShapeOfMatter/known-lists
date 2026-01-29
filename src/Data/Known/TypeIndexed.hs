@@ -1,4 +1,4 @@
--- | Types, functions, and structures for writing choreographies with variable numbers of participants.
+-- | List-like data structures and loop-like control flow based on type level lists.
 module Data.Known.TypeIndexed where
 
 import Data.Bifunctor.Flip
@@ -15,10 +15,8 @@ import qualified GHC.Exts as EXTS
 -- * The root abstraction
 
 -- | A mapping, accessed by `Member` terms, from types to values.
---   The types of the values depend on the indexing type; this relation is expressed by the type-level function @f@.
+--   The types of the values vary over the indexing type; this relation is expressed by the type-level function @f@.
 --   If the types of the values /don't/ depend on the index, use t`TVec`.
---   If the types vary only in that they are `Located` at the indexing party, use `Faceted`.
---   t`TIndexed` generalizes those two types in a way that's not usually necessary when writing choreographies.
 newtype TIndexed ts f = TIndexed {tindex :: TIndex ts f}
 
 -- | An impredicative quantified type. Wrapping it up in t`TIndexed` wherever possible will avoid a lot of type errors and headache.
@@ -67,13 +65,14 @@ instance (Known [k] ls, forall l. Applicative (m l)) => Applicative (Compose (TI
   liftA2 f (Compose (TIndexed a)) (Compose (TIndexed b)) = Compose . TIndexed $ \l -> _fliplift f (a l) (b l)
 instance (Known [k] ls, forall l. Monad (m l)) => Monad (Compose (TIndexed ls) (Flip m)) where
 -}
-    
 
--- | Sequence computations indexed by parties.
---   Converts a t`TIndexed` of computations into a computation yielding a t`TIndexed`.
---   Strongly analogous to 'Data.Traversable.sequence'.
---   In most cases, the [choreographic functions](#g:choreographicfunctions) below will be easier to use
---   than messing around with `Data.Functor.Compose.Compose`.
+-- * Looping
+
+-- | Sequence type-indexed computations.
+--   Converts a t`TIndexed` of computations in some monad into a computation yielding a t`TIndexed`.
+--   Analogous to 'Data.Traversable.sequence'.
+--   In practice, you should write your own helper types and functions based off of this,
+--   to avoid messing with `Compose` in business code.
 sequenceT ::
   forall {k} (b :: k -> Type) (ts :: [k]) (m :: Type -> Type) .
   (Known [k] ts, Applicative m) =>
@@ -112,7 +111,7 @@ tTail :: TVec (p ': ps) a -> TVec ps a
 tTail (TVec (TIndexed f)) = TVec . TIndexed $ f . Later
 
 -- | Prepend a value to a t`TVec`.
---   The corresponding `Symbol` to bind it to must be provided by type-application if it can't be infered.
+--   The corresponding `Symbol` (or other) to bind it to must be provided by type-application if it can't be infered.
 tCons :: forall p ps a. a -> TVec ps a -> TVec (p ': ps) a
 tCons a (TVec (TIndexed f)) = TVec . TIndexed $ \case
   First -> Const a

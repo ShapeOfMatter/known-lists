@@ -8,7 +8,7 @@ import qualified Data.Typeable as Tpbl
 -- * Membership proofs
 
 -- | A term-level proof that a type is a member of a list of types.
---   These are frequently used both for proofs /per se/ and to identify individuals in such a list.
+--   These are frequently used both for proofs /per se/ and as proxy-like identifers for the items in the list.
 --
 --   For example: @foo :: Member foo symbols@ is a proof that the type-level `Symbol`, @foo@, is in @symbols@,
 --   and it can also be used as a __term-level__ identifier for the __type-level__ @foo@,
@@ -25,50 +25,56 @@ instance Proxies (Member x ys) x where
 instance (Known k x, Known [k] xs) => Show (Member x xs) where
   show m = "Member " ++ (show . Tpbl.typeRep . proxy $ m) ++ " " ++ (show . typeReps $ Proxy @xs)
 
--- | Any element @p@ is a member of the list @'[p]@.
-alone :: forall p. Member p (p ': '[])
+-- | Any type @t@ is a member of the list @'[t]@.
+alone :: Member t (t ': '[])
 alone = First
 
 -- | Use any membership proof to to safely call code that only works on a non-empy list.
 quorum1 ::
-  forall {k} (ps :: [k]) (p :: k) a.
-  (Known [k] ps) =>
-  Member p ps ->
-  (forall q qs. (Known k q, Known [k] qs, ps ~ q ': qs) => a) ->
+  forall {k} (ts :: [k]) (t :: k) a.
+  (Known [k] ts) =>
+  Member t ts ->
+  -- ^ A proof that a member of `ts` exists.
+  (forall head tail. (Known k head, Known [k] tail, ts ~ head ': tail) => a) ->
+  -- ^ A computation that only works if `ts` isn't `'[]`.
   a
-quorum1 p a = case (p, tySpine @k @ps) of
+quorum1 t a = case (t, tySpine @k @ts) of
   (First, TyCons _ _) -> a
   (Later _, TyCons _ _) -> a
 
--- * Easy indexing with `Member` objects.
+-- * Simple indexes as `Member` objects.
+-- 
+-- $listedNth
+--
+-- These will get depricated in favor of @Nat@ based indexing at some point.
 
 -- | A `Member` value for the first item in a list.
 --   Note that type-applicaiton is different than with `First`, to which this is otherwise redundant.
-listedFirst :: forall p1 ps. Member p1 (p1 ': ps) -- Can we replace all of these with something using off-the-shelf type-level Nats?
+listedFirst :: forall t1 ts. Member t1 (t1 ': ts) -- Can we replace all of these with something using off-the-shelf type-level Nats?
 listedFirst = First
 
 -- | A `Member` value for the second item in a list.
-listedSecond :: forall p2 p1 ps. Member p2 (p1 ': p2 ': ps)
+listedSecond :: forall t2 t1 ts. Member t2 (t1 ': t2 ': ts)
 listedSecond = inSuper (consSuper refl) listedFirst
 
 -- | A `Member` value for the third item in a list.
-listedThird :: forall p3 p2 p1 ps. Member p3 (p1 ': p2 ': p3 ': ps)
+listedThird :: forall t3 t2 t1 ts. Member t3 (t1 ': t2 ': t3 ': ts)
 listedThird = inSuper (consSuper refl) listedSecond
 
 -- | A `Member` value for the forth item in a list.
-listedForth :: forall p4 p3 p2 p1 ps. Member p4 (p1 ': p2 ': p3 ': p4 ': ps)
+listedForth :: forall t4 t3 t2 t1 ts. Member t4 (t1 ': t2 ': t3 ': t4 ': ts)
 listedForth = inSuper (consSuper refl) listedThird
 
 -- | A `Member` value for the fifth item in a list.
-listedFifth :: forall p5 p4 p3 p2 p1 ps. Member p5 (p1 ': p2 ': p3 ': p4 ': p5 ': ps)
+listedFifth :: forall t5 t4 t3 t2 t1 ts. Member t5 (t1 ': t2 ': t3 ': t4 ': t5 ': ts)
 listedFifth = inSuper (consSuper refl) listedForth
 
 -- | A `Member` value for the sixth item in a list.
-listedSixth :: forall p6 p5 p4 p3 p2 p1 ps. Member p6 (p1 ': p2 ': p3 ': p4 ': p5 ': p6 ': ps)
+listedSixth :: forall t6 t5 t4 t3 t2 t1 ts. Member t6 (t1 ': t2 ': t3 ': t4 ': t5 ': t6 ': ts)
 listedSixth = inSuper (consSuper refl) listedFifth
 
 -- * Subset proofs
---
+
 -- | A term level proof that one type-level list represents a subset of another,
 --   embodied by a total function from proof-of-membership in the sublist to proof-of-membership in the superlist.
 --   (If you make one with a partial funciton, all bets are off.)
@@ -87,7 +93,7 @@ refl :: Subset xs xs
 refl = Subset id
 
 -- | Alias `refl`. When used as an identifier, this is more descriptive.
-allOf :: forall ps. Subset ps ps
+allOf :: forall ts. Subset ts ts
 allOf = refl
 
 -- | The sublist relation is transitive.
@@ -95,11 +101,11 @@ transitive :: Subset xs ys -> Subset ys zs -> Subset xs zs
 transitive sxy syz = Subset $ inSuper syz . inSuper sxy
 
 -- | The `[]` case of subset proofs.
--- Typlically used to build subset proofs using membership proofs using `@@`.
+-- Typlically used with `@@` to build subset proofs out of membership proofs.
 nobody :: Subset '[] ys
 nobody = Subset \case {}
 
--- | Any lists is a subset of the list made by consing itself with any other item.
+-- | Any lists is a subset of the list made by consing itself with another item.
 consSet :: forall xs x xs'. (xs ~ (x ': xs')) => Subset xs' (x ': xs')
 consSet = Subset Later
 
@@ -122,6 +128,11 @@ mxy @@ sxy = Subset \case
 
 
 -- * Explicit Membership
+--
+-- $explicit
+--
+-- When all the concret types/symbols etc are availible to GHC for inxpection, there's no need to write your own proofs.
+-- This naieve system stops working as soon as you introduce polymorphism.
 
 -- | Quickly build membership proofs, when the membership can be directly observed by GHC.
 class ExplicitMember (x :: k) (xs :: [k]) where
