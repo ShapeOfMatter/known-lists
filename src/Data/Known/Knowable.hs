@@ -33,6 +33,11 @@ instance Knowable Char where
   type Known' Char = T.KnownChar
   pToValue = T.charVal
 
+instance Knowable () where
+  type ValType () = ()
+  type Known' () = KnownUnit
+  pToValue = unitVal
+
 instance (Knowable k) => Knowable [k] where
   type ValType [k] = [ValType k]
   type Known' [k] = KnownList
@@ -100,3 +105,10 @@ typeReps _ = case tySpine @v @vs of
   TyCons h ts -> Tpbl.typeRep h : typeReps ts
 
 
+-- * Known Unit
+
+-- | I see no reason for this not to exist too.
+class KnownUnit (u :: ()) where
+  unitVal :: Proxy u -> ()
+instance KnownUnit '() where
+  unitVal _ = ()
