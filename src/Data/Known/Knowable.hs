@@ -86,11 +86,14 @@ instance (Knowable k) => KnownList ('[] :: [k]) where
 instance (Known k t, Known [k] ts) => KnownList (t ': ts) where
   tySpine = TyCons Proxy Proxy
 
+-- | Get the length of a known type-level list.
 knownLength :: forall {v} (vs :: [v]) p. (KnownList vs, Proxies p vs) => p -> Int
 knownLength _ = case tySpine @v @vs of
   TyNil -> 0
   TyCons _ ts -> 1 + knownLength ts
 
+-- | Get a list of runtime type-representations for a known type-level list.
+--   This is mostly for disply purposes; this library may drop the use of TypeRep, and logic shouldn't depend on it.
 typeReps :: forall {v} (vs :: [v]) p. (KnownList vs, Proxies p vs) => p -> [Tpbl.TypeRep]
 typeReps _ = case tySpine @v @vs of
   TyNil -> []

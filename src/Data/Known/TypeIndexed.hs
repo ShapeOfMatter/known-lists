@@ -72,7 +72,7 @@ instance (Known [k] ls, forall l. Monad (m l)) => Monad (Compose (TIndexed ls) (
 --   Converts a t`TIndexed` of computations in some monad into a computation yielding a t`TIndexed`.
 --   Analogous to 'Data.Traversable.sequence'.
 --   In practice, you should write your own helper types and functions based off of this,
---   to avoid messing with `Compose` in business code.
+--   to avoid messing with `Data.Functor.Compose.Compose` in business code.
 sequenceT ::
   forall {k} (b :: k -> Type) (ts :: [k]) (m :: Type -> Type) .
   (Known [k] ts, Applicative m) =>
@@ -111,7 +111,7 @@ tTail :: TVec (p ': ps) a -> TVec ps a
 tTail (TVec (TIndexed f)) = TVec . TIndexed $ f . Later
 
 -- | Prepend a value to a t`TVec`.
---   The corresponding `Symbol` (or other) to bind it to must be provided by type-application if it can't be infered.
+--   The corresponding `GHC.TypeLits.Symbol` (or other) to bind it to must be provided by type-application if it can't be infered.
 tCons :: forall p ps a. a -> TVec ps a -> TVec (p ': ps) a
 tCons a (TVec (TIndexed f)) = TVec . TIndexed $ \case
   First -> Const a

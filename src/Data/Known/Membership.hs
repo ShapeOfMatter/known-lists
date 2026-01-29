@@ -10,9 +10,9 @@ import qualified Data.Typeable as Tpbl
 -- | A term-level proof that a type is a member of a list of types.
 --   These are frequently used both for proofs /per se/ and as proxy-like identifers for the items in the list.
 --
---   For example: @foo :: Member foo symbols@ is a proof that the type-level `Symbol`, @foo@, is in @symbols@,
+--   For example: @foo :: Member foo symbols@ is a proof that the type-level `GHC.TypeLits.Symbol`, @foo@, is in @symbols@,
 --   and it can also be used as a __term-level__ identifier for the __type-level__ @foo@,
---   similar to how a @proxy@ might be used.
+--   similar to how a `Data.Proxy.proxy` might be used.
 --
 --   Pattern matching on these values is like pattern matching on a successor-based @Nat@;
 --   in this sense a @Member x xs@ is an index into @xs@ at which @x@ can be found.
@@ -34,9 +34,9 @@ quorum1 ::
   forall {k} (ts :: [k]) (t :: k) a.
   (Known [k] ts) =>
   Member t ts ->
-  -- ^ A proof that a member of `ts` exists.
+  -- ^ A proof that a member of @ts@ exists.
   (forall head tail. (Known k head, Known [k] tail, ts ~ head ': tail) => a) ->
-  -- ^ A computation that only works if `ts` isn't `'[]`.
+  -- ^ A computation that only works if @ts@ isn't `'[]`.
   a
 quorum1 t a = case (t, tySpine @k @ts) of
   (First, TyCons _ _) -> a
