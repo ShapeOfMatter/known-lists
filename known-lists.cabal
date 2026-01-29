@@ -58,5 +58,6 @@ test-suite known-lists-test
     type:             exitcode-stdio-1.0
     hs-source-dirs:   test
     main-is:          Test.hs
-    build-depends:
-        known-lists
+    build-depends:    known-lists
+
+    other-modules:    Example

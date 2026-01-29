@@ -1,9 +1,10 @@
 module Main (main) where
 
-import Data.Known
-import Data.Membership
-import Data.TIndexed
+import Data.Known.Knowable
+import Data.Known.Membership
+import Data.Known.TypeIndexed
 import Data.Proxy (Proxy (..))
+import Example
 import qualified GHC.TypeLits as T
 
 testFailure :: String -> String -> IO a
@@ -39,6 +40,9 @@ tests = [ tautology
         , valueOfMember
         , showMember
         , showSubset
+        , exampleReadMe1
+        , exampleReadMe2
+        , exampleReadMe3
         ]
 
 tautology :: Test Bool
@@ -88,6 +92,26 @@ report = ("Report",pure $ Left "Reporting that this test failed.")
 opaque :: Test
 opaque = ("Opaque",pure $ pure False)
 -}
+
+exampleReadMe1 :: Test Bool
+exampleReadMe1 = equality <*> pureShown startList <*> fmap (
+        raggedToList . raggedFromTape @'[] @Int
+        ) (pureShown startList)
+    where startList = []
+
+type ThreeThreeTwo = '[ '[ '(), '(), '() ], '[ '(), '(), '() ], '[ '(), '() ] ]
+
+exampleReadMe2 :: Test Bool
+exampleReadMe2 = equality <*> pureShown startList <*> fmap (
+        raggedToList . raggedFromTape @ThreeThreeTwo @Int
+        ) (pureShown startList)
+    where startList = [1 .. 8]
+
+exampleReadMe3 :: Test Bool
+exampleReadMe3 = equality <*> pureShown 5 <*> fmap (
+        (!!! (listedSecond, listedSecond)) . raggedFromTape @ThreeThreeTwo @Int
+        ) (pureShown startList)
+    where startList = [1 .. 8]
 
 runTest :: Test Bool -> IO ()
 runTest Test{name, test} = do
