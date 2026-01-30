@@ -12,7 +12,9 @@ description:
     as well as subsets,
     maps,
     and traversals.
-category:           Data
+category:           Data Structures
+                    ,Dependent Types
+                    ,Type System
 build-type:         Simple
 extra-doc-files:    README.md
 tested-with:        

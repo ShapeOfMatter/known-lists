@@ -17,8 +17,8 @@ import qualified Data.Typeable as Tpbl
 --   Pattern matching on these values is like pattern matching on a successor-based @Nat@;
 --   in this sense a @Member x xs@ is an index into @xs@ at which @x@ can be found.
 data Member (x :: k) (xs :: [k]) where
-  First :: forall xs x xs'. (xs ~ (x ': xs')) => Member x (x ': xs')
-  Later :: Member x xs -> Member x (y ': xs)
+  First :: forall ys y tail. (ys ~ (y ': tail)) => Member y (y ': tail)
+  Later :: Member y ys -> Member y (head ': ys)
   -- todo: Eq and Ord probably are meaningful and derivable...
 instance Proxies (Member x ys) x where
   proxy _ = Proxy
@@ -46,7 +46,7 @@ quorum1 t a = case (t, tySpine @k @ts) of
 -- 
 -- $listedNth
 --
--- These will get depricated in favor of @Nat@ based indexing at some point.
+-- These will get deprecated in favor of @Nat@ based indexing at some point.
 
 -- | A `Member` value for the first item in a list.
 --   Note that type-applicaiton is different than with `First`, to which this is otherwise redundant.
@@ -80,7 +80,6 @@ listedSixth = inSuper (consSuper refl) listedFifth
 --   (If you make one with a partial funciton, all bets are off.)
 newtype Subset xs ys = Subset
   { -- | Convert a proof of membership in the sublist to a proof of membership in the superlist.
-    -- Frequently used to show that a location is part of a larger set of locations.
     inSuper :: forall x. Member x xs -> Member x ys
   }
 instance Proxies (Subset xs ys) xs where

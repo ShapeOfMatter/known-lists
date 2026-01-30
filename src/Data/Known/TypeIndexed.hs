@@ -17,6 +17,16 @@ import qualified GHC.Exts as EXTS
 -- | A mapping, accessed by `Member` terms, from types to values.
 --   The types of the values vary over the indexing type; this relation is expressed by the type-level function @f@.
 --   If the types of the values /don't/ depend on the index, use t`TVec`.
+--
+--   __Example__
+--   
+--   > type MySymbols = '["alice", "foo"]
+--   >
+--   > myProxies :: TIndexed MySymbols Proxy
+--   > myProxies = TIndexed $ const Proxy
+--   >
+--   > myStrings :: (Known Symbol s) => Member s MySymbols -> String
+--   > myStrings m = toValue $ (tindex myProxies) m
 newtype TIndexed ts f = TIndexed {tindex :: TIndex ts f}
 
 -- | An impredicative quantified type. Wrapping it up in t`TIndexed` wherever possible will avoid a lot of type errors and headache.

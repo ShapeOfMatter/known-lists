@@ -7,9 +7,9 @@ import Data.Proxy (Proxy (..))
 import qualified Data.Typeable as Tpbl
 import qualified GHC.TypeLits as T
 
--- * A unified "known type" class
+-- * The Known Class
 
--- | A constraint n a kind, saying types of that kind can be known.
+-- | A constraint on a kind, saying types of that kind can be known.
 class Knowable k where
   -- | The type of the values that corrispond to types of this kind, /e.g./ @ValType Symbol = String@.
   type ValType k :: Type
@@ -62,7 +62,7 @@ toValue :: (Knowable k, Known k v, Proxies f v) => f -> ValType k
 toValue = pToValue . proxy
 
 
--- * Handling type-level lists literals
+-- * Known Lists
 
 -- | Term-level markers of the structure of a type-level list.
 --   Pattern matching on them recovers both the spine of the list and
@@ -70,10 +70,13 @@ toValue = pToValue . proxy
 --   `Known` constaint satisfactions for the head and tail.
 --   This context is typically retrieved by pattern-matching.
 data TySpine (ts :: [k]) where
-  -- | Denotes that the list has a head and tail.
   TyCons :: (Known k head, Known [k] tail)
-         => Proxy head -> Proxy tail -> TySpine (head ': tail)
-  -- | Denotes that the list is empty.
+         => Proxy head
+         -- ^ The list has a head, which is `Known`.
+         -> Proxy tail
+         -- ^ The list has a tail, whick is `Known`.
+         -> TySpine (head ': tail)
+  -- | The list is empty.
   TyNil :: TySpine '[] -- todo: make k explicit and applyable.
 
 -- | The type-level-list version of `GHC.TypeList.KnownSymbol`.
@@ -98,7 +101,7 @@ knownLength _ = case tySpine @v @vs of
   TyCons _ ts -> 1 + knownLength ts
 
 -- | Get a list of runtime type-representations for a known type-level list.
---   This is mostly for disply purposes; this library may drop the use of TypeRep, and logic shouldn't depend on it.
+--   This is mostly for display purposes; this library may drop the use of `TypeRep`, and logic shouldn't depend on it.
 typeReps :: forall {v} (vs :: [v]) p. (KnownList vs, Proxies p vs) => p -> [Tpbl.TypeRep]
 typeReps _ = case tySpine @v @vs of
   TyNil -> []

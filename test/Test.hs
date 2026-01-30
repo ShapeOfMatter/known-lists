@@ -42,6 +42,7 @@ tests = [ tautology
         , exampleReadMe1
         , exampleReadMe2
         , exampleReadMe3
+        , exampleTIndexed
         ]
 
 tautology :: Test Bool
@@ -111,6 +112,9 @@ exampleReadMe3 = equality <*> pureShown 5 <*> fmap (
         (!!! (listedSecond, listedSecond)) . raggedFromList @ThreeThreeTwo @Int
         ) (pureShown startList)
     where startList = [1 .. 8]
+
+exampleTIndexed :: Test Bool
+exampleTIndexed = equality <*> pureShown "foo" <*> fmap myStrings (pureShown listedSecond)
 
 runTest :: Test Bool -> IO ()
 runTest Test{name, test} = do
